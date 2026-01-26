@@ -1,47 +1,71 @@
-# Svelte + TS + Vite
+# Aspect Preview
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+写真や画像の構図確認のためのデスクトップアプリケーションです。様々な構図ガイド線をキャンバス上に表示し、インタラクティブに操作できます。
 
-## Recommended IDE Setup
+## 機能
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+### 構図ガイド
 
-## Need an official Svelte framework?
+- **三分割法** - 画面を縦横3等分する基本的な構図線
+- **黄金比** - 黄金比（1:1.618）に基づく分割線
+- **対角線** - 対角線による構図ガイド
+- **中央** - 中央を示す十字線
+- **黄金螺旋** - フィボナッチ螺旋（反転・正方形表示オプション付き）
+- **グリッド** - カスタマイズ可能なグリッド線
+- **三角形** - 三角形構図ガイド
+- **ラバットメント** - 正方形の内接を示すガイド
+- **ハーモニック** - ハーモニック分割線
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+### インタラクション
 
-## Technical considerations
+- ガイド線の移動、拡大縮小、回転
+- 回転スナップ機能（角度指定可能）
+- ドラッグ&ドロップによる表示順序の変更
 
-**Why use this over SvelteKit?**
+### その他
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+- 複数の解像度プリセット（FHD, QHD, 4K, etc.）
+- カスタム解像度の入力
+- PNG形式でのエクスポート
+- 設定の自動保存（localStorage）
 
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+## 技術スタック
 
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
+- [Svelte 5](https://svelte.dev/) - UIフレームワーク
+- [TypeScript](https://www.typescriptlang.org/) - 型安全な開発
+- [Vite](https://vite.dev/) - ビルドツール
+- [Tauri 2](https://tauri.app/) - デスクトップアプリフレームワーク
 
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
+## 開発
 
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
+### 必要環境
 
-**Why include `.vscode/extensions.json`?**
+- Node.js 18+
+- pnpm
+- Rust (Tauri用)
 
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
+### セットアップ
 
-**Why enable `allowJs` in the TS template?**
+```bash
+# 依存関係のインストール
+pnpm install
 
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
+# 開発サーバーの起動（Webのみ）
+pnpm dev
 
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+# Tauriアプリとして起動
+pnpm tauri:dev
 ```
+
+### ビルド
+
+```bash
+# プロダクションビルド
+pnpm tauri:build
+```
+
+## ライセンス
+
+このプロジェクトは [GNU Affero General Public License v3.0 (AGPL-3.0)](https://www.gnu.org/licenses/agpl-3.0.html) の下でライセンスされています。
+
+詳細は [LICENSE](LICENSE) ファイルを参照してください。
