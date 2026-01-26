@@ -28,6 +28,8 @@ export interface Guide {
   spiralShowSquares?: boolean;
   offsetX: number;
   offsetY: number;
+  guideWidth: number;
+  guideHeight: number;
 }
 
 export interface CanvasSize {
@@ -47,7 +49,7 @@ export const GUIDE_TYPE_LABELS: Record<GuideType, string> = {
   'harmonic': 'ハーモニック'
 };
 
-export function createDefaultGuide(type: GuideType): Guide {
+export function createDefaultGuide(type: GuideType, canvasSize: CanvasSize): Guide {
   const id = crypto.randomUUID();
   const baseGuide: Guide = {
     id,
@@ -57,7 +59,9 @@ export function createDefaultGuide(type: GuideType): Guide {
     lineWidth: 1,
     opacity: 100,
     offsetX: 0,
-    offsetY: 0
+    offsetY: 0,
+    guideWidth: canvasSize.width,
+    guideHeight: canvasSize.height
   };
 
   if (type === 'grid') {

@@ -51,7 +51,7 @@
 
   function addGuide(type: GuideType) {
     if (usedTypes.has(type)) return;
-    const newGuide = createDefaultGuide(type);
+    const newGuide = createDefaultGuide(type, canvasSize);
     onGuidesChange([...guides, newGuide]);
   }
 

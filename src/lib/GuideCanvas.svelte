@@ -16,10 +16,16 @@
   let sectionWidth = $state(800);
   let sectionHeight = $state(600);
   let isDragging = $state(false);
+  let isResizing = $state(false);
+  let resizeHandle = $state<string | null>(null);
   let dragStartX = $state(0);
   let dragStartY = $state(0);
   let initialOffsetX = $state(0);
   let initialOffsetY = $state(0);
+  let initialGuideWidth = $state(0);
+  let initialGuideHeight = $state(0);
+
+  type HandleType = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
 
   const PHI = 1.618033988749895;
   const SIDEBAR_WIDTH = 321;
@@ -59,6 +65,9 @@
     for (const guide of guides) {
       if (!guide.enabled) continue;
 
+      const w = guide.guideWidth;
+      const h = guide.guideHeight;
+
       ctx.save();
       ctx.translate(guide.offsetX, guide.offsetY);
       ctx.strokeStyle = hslToString(guide.color, guide.opacity);
@@ -66,50 +75,54 @@
 
       switch (guide.type) {
         case 'thirds':
-          drawThirds(ctx);
+          drawThirds(ctx, w, h);
           break;
         case 'golden-ratio':
-          drawGoldenRatio(ctx);
+          drawGoldenRatio(ctx, w, h);
           break;
         case 'diagonal':
-          drawDiagonal(ctx);
+          drawDiagonal(ctx, w, h);
           break;
         case 'center':
-          drawCenter(ctx);
+          drawCenter(ctx, w, h);
           break;
         case 'golden-spiral':
-          drawGoldenSpiral(ctx, guide.spiralFlip || 'none', guide.spiralShowSquares || false);
+          drawGoldenSpiral(ctx, w, h, guide.spiralFlip || 'none', guide.spiralShowSquares || false);
           break;
         case 'grid':
-          drawGrid(ctx, guide.gridColumns || 4, guide.gridRows || 4);
+          drawGrid(ctx, w, h, guide.gridColumns || 4, guide.gridRows || 4);
           break;
         case 'triangle':
-          drawTriangle(ctx);
+          drawTriangle(ctx, w, h);
           break;
         case 'rabatment':
-          drawRabatment(ctx);
+          drawRabatment(ctx, w, h);
           break;
         case 'harmonic':
-          drawHarmonic(ctx);
+          drawHarmonic(ctx, w, h);
           break;
-      }
-
-      if (guide.id === selectedGuideId) {
-        drawSelectionBox(ctx);
       }
 
       ctx.restore();
+
+      if (guide.id === selectedGuideId) {
+        ctx.save();
+        ctx.translate(guide.offsetX, guide.offsetY);
+        drawSelectionBox(ctx, guide);
+        ctx.restore();
+      }
     }
   }
 
-  function drawSelectionBox(ctx: CanvasRenderingContext2D) {
-    const w = canvasSize.width;
-    const h = canvasSize.height;
+  function drawSelectionBox(ctx: CanvasRenderingContext2D, guide: Guide) {
+    const w = guide.guideWidth;
+    const h = guide.guideHeight;
     const scale = getCanvasScale();
     const adjustedLineWidth = Math.max(2, 3 / scale);
     const adjustedDash = Math.max(10, 15 / scale);
     const adjustedGap = Math.max(5, 8 / scale);
     const padding = Math.max(10, 15 / scale);
+    const handleSize = Math.max(8, 12 / scale);
 
     ctx.strokeStyle = 'hsl(200, 70%, 50%)';
     ctx.lineWidth = adjustedLineWidth;
@@ -118,12 +131,66 @@
     ctx.rect(-padding, -padding, w + padding * 2, h + padding * 2);
     ctx.stroke();
     ctx.setLineDash([]);
+
+    ctx.fillStyle = 'hsl(200, 70%, 50%)';
+    const handles: { type: HandleType; x: number; y: number }[] = [
+      { type: 'nw', x: -padding, y: -padding },
+      { type: 'n', x: w / 2, y: -padding },
+      { type: 'ne', x: w + padding, y: -padding },
+      { type: 'e', x: w + padding, y: h / 2 },
+      { type: 'se', x: w + padding, y: h + padding },
+      { type: 's', x: w / 2, y: h + padding },
+      { type: 'sw', x: -padding, y: h + padding },
+      { type: 'w', x: -padding, y: h / 2 }
+    ];
+
+    for (const handle of handles) {
+      ctx.beginPath();
+      ctx.rect(
+        handle.x - handleSize / 2,
+        handle.y - handleSize / 2,
+        handleSize,
+        handleSize
+      );
+      ctx.fill();
+    }
   }
 
-  function drawThirds(ctx: CanvasRenderingContext2D) {
-    const w = canvasSize.width;
-    const h = canvasSize.height;
+  function getHandleAtPosition(x: number, y: number, guide: Guide): HandleType | null {
+    const w = guide.guideWidth;
+    const h = guide.guideHeight;
+    const scale = getCanvasScale();
+    const padding = Math.max(10, 15 / scale);
+    const handleSize = Math.max(8, 12 / scale);
+    const hitArea = handleSize * 1.5;
 
+    const handles: { type: HandleType; x: number; y: number }[] = [
+      { type: 'nw', x: -padding, y: -padding },
+      { type: 'n', x: w / 2, y: -padding },
+      { type: 'ne', x: w + padding, y: -padding },
+      { type: 'e', x: w + padding, y: h / 2 },
+      { type: 'se', x: w + padding, y: h + padding },
+      { type: 's', x: w / 2, y: h + padding },
+      { type: 'sw', x: -padding, y: h + padding },
+      { type: 'w', x: -padding, y: h / 2 }
+    ];
+
+    const localX = x - guide.offsetX;
+    const localY = y - guide.offsetY;
+
+    for (const handle of handles) {
+      if (
+        Math.abs(localX - handle.x) < hitArea &&
+        Math.abs(localY - handle.y) < hitArea
+      ) {
+        return handle.type;
+      }
+    }
+
+    return null;
+  }
+
+  function drawThirds(ctx: CanvasRenderingContext2D, w: number, h: number) {
     ctx.beginPath();
     ctx.moveTo(w / 3, 0);
     ctx.lineTo(w / 3, h);
@@ -136,10 +203,7 @@
     ctx.stroke();
   }
 
-  function drawGoldenRatio(ctx: CanvasRenderingContext2D) {
-    const w = canvasSize.width;
-    const h = canvasSize.height;
-
+  function drawGoldenRatio(ctx: CanvasRenderingContext2D, w: number, h: number) {
     const v1 = w / PHI;
     const v2 = w - v1;
     const h1 = h / PHI;
@@ -157,10 +221,7 @@
     ctx.stroke();
   }
 
-  function drawDiagonal(ctx: CanvasRenderingContext2D) {
-    const w = canvasSize.width;
-    const h = canvasSize.height;
-
+  function drawDiagonal(ctx: CanvasRenderingContext2D, w: number, h: number) {
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(w, h);
@@ -169,10 +230,7 @@
     ctx.stroke();
   }
 
-  function drawCenter(ctx: CanvasRenderingContext2D) {
-    const w = canvasSize.width;
-    const h = canvasSize.height;
-
+  function drawCenter(ctx: CanvasRenderingContext2D, w: number, h: number) {
     ctx.beginPath();
     ctx.moveTo(w / 2, 0);
     ctx.lineTo(w / 2, h);
@@ -181,9 +239,9 @@
     ctx.stroke();
   }
 
-  function drawGoldenSpiral(ctx: CanvasRenderingContext2D, flip: 'none' | 'horizontal' | 'vertical' | 'both', showSquares: boolean) {
-    let w = canvasSize.width;
-    let h = canvasSize.height;
+  function drawGoldenSpiral(ctx: CanvasRenderingContext2D, gw: number, gh: number, flip: 'none' | 'horizontal' | 'vertical' | 'both', showSquares: boolean) {
+    let w = gw;
+    let h = gh;
     const isPortrait = h > w;
 
     ctx.save();
@@ -307,9 +365,7 @@
     ctx.restore();
   }
 
-  function drawGrid(ctx: CanvasRenderingContext2D, cols: number, rows: number) {
-    const w = canvasSize.width;
-    const h = canvasSize.height;
+  function drawGrid(ctx: CanvasRenderingContext2D, w: number, h: number, cols: number, rows: number) {
     const cellW = w / cols;
     const cellH = h / rows;
 
@@ -328,10 +384,7 @@
     ctx.stroke();
   }
 
-  function drawTriangle(ctx: CanvasRenderingContext2D) {
-    const w = canvasSize.width;
-    const h = canvasSize.height;
-
+  function drawTriangle(ctx: CanvasRenderingContext2D, w: number, h: number) {
     ctx.beginPath();
     ctx.moveTo(0, h);
     ctx.lineTo(w / 2, 0);
@@ -347,9 +400,7 @@
     ctx.stroke();
   }
 
-  function drawRabatment(ctx: CanvasRenderingContext2D) {
-    const w = canvasSize.width;
-    const h = canvasSize.height;
+  function drawRabatment(ctx: CanvasRenderingContext2D, w: number, h: number) {
     const shortSide = Math.min(w, h);
 
     ctx.beginPath();
@@ -369,10 +420,7 @@
     ctx.stroke();
   }
 
-  function drawHarmonic(ctx: CanvasRenderingContext2D) {
-    const w = canvasSize.width;
-    const h = canvasSize.height;
-
+  function drawHarmonic(ctx: CanvasRenderingContext2D, w: number, h: number) {
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(w, h);
@@ -414,7 +462,18 @@
     dragStartY = (e.clientY - rect.top) / scale;
 
     const selectedGuide = guides.find(g => g.id === selectedGuideId);
-    if (selectedGuide) {
+    if (!selectedGuide) return;
+
+    const handle = getHandleAtPosition(dragStartX, dragStartY, selectedGuide);
+
+    if (handle) {
+      resizeHandle = handle;
+      initialGuideWidth = selectedGuide.guideWidth;
+      initialGuideHeight = selectedGuide.guideHeight;
+      initialOffsetX = selectedGuide.offsetX;
+      initialOffsetY = selectedGuide.offsetY;
+      isResizing = true;
+    } else {
       initialOffsetX = selectedGuide.offsetX;
       initialOffsetY = selectedGuide.offsetY;
       isDragging = true;
@@ -422,7 +481,7 @@
   }
 
   function handleMouseMove(e: MouseEvent) {
-    if (!isDragging || !selectedGuideId || !canvasRef) return;
+    if ((!isDragging && !isResizing) || !selectedGuideId || !canvasRef) return;
 
     const rect = canvasRef.getBoundingClientRect();
     const scale = getCanvasScale();
@@ -433,22 +492,84 @@
     const deltaX = currentX - dragStartX;
     const deltaY = currentY - dragStartY;
 
-    const newGuides = guides.map(g => {
-      if (g.id === selectedGuideId) {
+    if (isResizing && resizeHandle) {
+      const minSize = 100;
+
+      const newGuides = guides.map(g => {
+        if (g.id !== selectedGuideId) return g;
+
+        let newGuideWidth = initialGuideWidth;
+        let newGuideHeight = initialGuideHeight;
+        let newOffsetX = initialOffsetX;
+        let newOffsetY = initialOffsetY;
+
+        switch (resizeHandle) {
+          case 'e':
+            newGuideWidth = Math.max(minSize, initialGuideWidth + deltaX);
+            break;
+          case 'w':
+            newGuideWidth = Math.max(minSize, initialGuideWidth - deltaX);
+            newOffsetX = initialOffsetX + (initialGuideWidth - newGuideWidth);
+            break;
+          case 's':
+            newGuideHeight = Math.max(minSize, initialGuideHeight + deltaY);
+            break;
+          case 'n':
+            newGuideHeight = Math.max(minSize, initialGuideHeight - deltaY);
+            newOffsetY = initialOffsetY + (initialGuideHeight - newGuideHeight);
+            break;
+          case 'se':
+            newGuideWidth = Math.max(minSize, initialGuideWidth + deltaX);
+            newGuideHeight = Math.max(minSize, initialGuideHeight + deltaY);
+            break;
+          case 'sw':
+            newGuideWidth = Math.max(minSize, initialGuideWidth - deltaX);
+            newGuideHeight = Math.max(minSize, initialGuideHeight + deltaY);
+            newOffsetX = initialOffsetX + (initialGuideWidth - newGuideWidth);
+            break;
+          case 'ne':
+            newGuideWidth = Math.max(minSize, initialGuideWidth + deltaX);
+            newGuideHeight = Math.max(minSize, initialGuideHeight - deltaY);
+            newOffsetY = initialOffsetY + (initialGuideHeight - newGuideHeight);
+            break;
+          case 'nw':
+            newGuideWidth = Math.max(minSize, initialGuideWidth - deltaX);
+            newGuideHeight = Math.max(minSize, initialGuideHeight - deltaY);
+            newOffsetX = initialOffsetX + (initialGuideWidth - newGuideWidth);
+            newOffsetY = initialOffsetY + (initialGuideHeight - newGuideHeight);
+            break;
+        }
+
         return {
           ...g,
-          offsetX: initialOffsetX + deltaX,
-          offsetY: initialOffsetY + deltaY
+          guideWidth: newGuideWidth,
+          guideHeight: newGuideHeight,
+          offsetX: newOffsetX,
+          offsetY: newOffsetY
         };
-      }
-      return g;
-    });
+      });
 
-    onGuidesChange(newGuides);
+      onGuidesChange(newGuides);
+    } else if (isDragging) {
+      const newGuides = guides.map(g => {
+        if (g.id === selectedGuideId) {
+          return {
+            ...g,
+            offsetX: initialOffsetX + deltaX,
+            offsetY: initialOffsetY + deltaY
+          };
+        }
+        return g;
+      });
+
+      onGuidesChange(newGuides);
+    }
   }
 
   function handleMouseUp() {
     isDragging = false;
+    isResizing = false;
+    resizeHandle = null;
   }
 
   onMount(() => {
@@ -478,6 +599,7 @@
     style="width: {displayWidth}px; height: {displayHeight}px;"
     onmousedown={handleMouseDown}
     class:dragging={isDragging}
+    class:resizing={isResizing}
     class:selectable={selectedGuideId !== null}
   ></canvas>
 </section>
@@ -504,5 +626,9 @@
 
   canvas.dragging {
     cursor: grabbing;
+  }
+
+  canvas.resizing {
+    cursor: nwse-resize;
   }
 </style>

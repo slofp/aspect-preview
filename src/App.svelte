@@ -15,11 +15,20 @@
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        const migratedGuides = parsed.guides.map((g: Guide) => ({
-          ...g,
-          offsetX: g.offsetX ?? 0,
-          offsetY: g.offsetY ?? 0
-        }));
+        const canvasSizeForMigration = parsed.canvasSize || { width: 1920, height: 1080 };
+        const migratedGuides = parsed.guides.map((g: any) => {
+          const scaleX = g.scaleX ?? 1;
+          const scaleY = g.scaleY ?? 1;
+          return {
+            ...g,
+            offsetX: g.offsetX ?? 0,
+            offsetY: g.offsetY ?? 0,
+            guideWidth: g.guideWidth ?? canvasSizeForMigration.width * scaleX,
+            guideHeight: g.guideHeight ?? canvasSizeForMigration.height * scaleY,
+            scaleX: undefined,
+            scaleY: undefined
+          };
+        });
         return { ...parsed, guides: migratedGuides };
       }
     } catch {
