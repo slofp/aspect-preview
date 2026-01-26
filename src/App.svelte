@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { Guide, CanvasSize, SnapSettings } from './lib/types';
+  import { save } from '@tauri-apps/plugin-dialog';
+  import { writeFile } from '@tauri-apps/plugin-fs';
   import TitleBar from './lib/components/TitleBar.svelte';
   import GuideCanvas from './lib/components/GuideCanvas.svelte';
   import Sidebar from './lib/components/Sidebar.svelte';
@@ -35,13 +37,26 @@
     snap = newSnap;
   }
 
-  function handleExport() {
+  async function handleExport() {
     if (!canvasRef) return;
 
-    const link = document.createElement('a');
-    link.download = `composition-guide-${canvasSize.width}x${canvasSize.height}.png`;
-    link.href = canvasRef.toDataURL('image/png');
-    link.click();
+    try {
+      const filePath = await save({
+        defaultPath: `composition-guide-${canvasSize.width}x${canvasSize.height}.png`,
+        filters: [{ name: 'PNG Image', extensions: ['png'] }]
+      });
+
+      if (!filePath) return;
+
+      const dataUrl = canvasRef.toDataURL('image/png');
+      const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+      const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+
+      await writeFile(filePath, bytes);
+      console.log('Exported to:', filePath);
+    } catch (e) {
+      console.error('Export failed:', e);
+    }
   }
 </script>
 
