@@ -36,6 +36,7 @@
   let isResizing = $state(false);
   let isRotating = $state(false);
   let resizeHandle = $state<HandleType | null>(null);
+  let hoveredHandle = $state<HandleType | 'rotate' | 'move' | null>(null);
   let dragStart = $state<Point>({ x: 0, y: 0 });
   let initialOffset = $state<Point>({ x: 0, y: 0 });
   let initialSize = $state({ width: 0, height: 0 });
@@ -173,12 +174,65 @@
       anchor = anchorGlobal;
       isResizing = true;
     } else {
-      initialOffset = { x: selectedGuide.offsetX, y: selectedGuide.offsetY };
-      isDragging = true;
+      const w = selectedGuide.guideWidth;
+      const h = selectedGuide.guideHeight;
+      const cx = selectedGuide.offsetX + w / 2;
+      const cy = selectedGuide.offsetY + h / 2;
+
+      const cos = Math.cos(-selectedGuide.rotation);
+      const sin = Math.sin(-selectedGuide.rotation);
+      const dx = pos.x - cx;
+      const dy = pos.y - cy;
+      const localX = dx * cos - dy * sin + w / 2;
+      const localY = dx * sin + dy * cos + h / 2;
+
+      if (localX >= 0 && localX <= w && localY >= 0 && localY <= h) {
+        initialOffset = { x: selectedGuide.offsetX, y: selectedGuide.offsetY };
+        isDragging = true;
+      }
+    }
+  }
+
+  function updateHoveredHandle(e: MouseEvent) {
+    if (!selectedGuideId || !canvasRef || isDragging || isResizing || isRotating) {
+      hoveredHandle = null;
+      return;
+    }
+
+    const pos = getMousePosition(e);
+    const selectedGuide = guides.find(g => g.id === selectedGuideId);
+    if (!selectedGuide) {
+      hoveredHandle = null;
+      return;
+    }
+
+    const handle = getHandleAtPosition(pos.x, pos.y, selectedGuide, getCanvasScale());
+    if (handle) {
+      hoveredHandle = handle;
+    } else {
+      const w = selectedGuide.guideWidth;
+      const h = selectedGuide.guideHeight;
+      const cx = selectedGuide.offsetX + w / 2;
+      const cy = selectedGuide.offsetY + h / 2;
+
+      const cos = Math.cos(-selectedGuide.rotation);
+      const sin = Math.sin(-selectedGuide.rotation);
+      const dx = pos.x - cx;
+      const dy = pos.y - cy;
+      const localX = dx * cos - dy * sin + w / 2;
+      const localY = dx * sin + dy * cos + h / 2;
+
+      if (localX >= 0 && localX <= w && localY >= 0 && localY <= h) {
+        hoveredHandle = 'move';
+      } else {
+        hoveredHandle = null;
+      }
     }
   }
 
   function handleMouseMove(e: MouseEvent) {
+    updateHoveredHandle(e);
+
     if ((!isDragging && !isResizing && !isRotating) || !selectedGuideId || !canvasRef) return;
 
     const currentPos = getMousePosition(e);
@@ -250,6 +304,56 @@
     resizeHandle = null;
   }
 
+  function getCursorStyle(): string {
+    if (isDragging) return 'grabbing';
+    if (isRotating) return 'crosshair';
+    if (isResizing) {
+      switch (resizeHandle) {
+        case 'nw':
+        case 'se':
+          return 'nwse-resize';
+        case 'ne':
+        case 'sw':
+          return 'nesw-resize';
+        case 'n':
+        case 's':
+          return 'ns-resize';
+        case 'e':
+        case 'w':
+          return 'ew-resize';
+        default:
+          return 'nwse-resize';
+      }
+    }
+
+    if (hoveredHandle) {
+      switch (hoveredHandle) {
+        case 'rotate':
+          return 'crosshair';
+        case 'move':
+          return 'move';
+        case 'nw':
+        case 'se':
+          return 'nwse-resize';
+        case 'ne':
+        case 'sw':
+          return 'nesw-resize';
+        case 'n':
+        case 's':
+          return 'ns-resize';
+        case 'e':
+        case 'w':
+          return 'ew-resize';
+        default:
+          return 'default';
+      }
+    }
+
+    return 'default';
+  }
+
+  let cursorStyle = $derived(getCursorStyle());
+
   onMount(() => {
     calculateSectionSize();
     window.addEventListener('resize', calculateSectionSize);
@@ -274,12 +378,8 @@
     bind:this={canvasRef}
     width={canvasSize.width}
     height={canvasSize.height}
-    style="width: {displayWidth}px; height: {displayHeight}px;"
+    style="width: {displayWidth}px; height: {displayHeight}px; cursor: {cursorStyle};"
     onmousedown={handleMouseDown}
-    class:dragging={isDragging}
-    class:resizing={isResizing}
-    class:rotating={isRotating}
-    class:selectable={selectedGuideId !== null}
   ></canvas>
 </section>
 
@@ -297,21 +397,5 @@
   canvas {
     background-color: hsl(0, 0%, 15%);
     box-shadow: 0 0 0 1px hsl(0, 0%, 25%);
-  }
-
-  canvas.selectable {
-    cursor: move;
-  }
-
-  canvas.dragging {
-    cursor: grabbing;
-  }
-
-  canvas.resizing {
-    cursor: nwse-resize;
-  }
-
-  canvas.rotating {
-    cursor: crosshair;
   }
 </style>
