@@ -2,7 +2,7 @@
   import type { Guide, GuideType, CanvasSize, SnapSettings } from './types';
   import { GUIDE_TYPE_LABELS, createDefaultGuide } from './types';
   import GuideItem from './GuideItem.svelte';
-  import { IconDownload } from '@tabler/icons-svelte';
+  import { IconDownload, IconArrowsExchange } from '@tabler/icons-svelte';
 
   interface Props {
     canvasSize: CanvasSize;
@@ -47,6 +47,14 @@
     widthInput = preset.width.toString();
     heightInput = preset.height.toString();
     onCanvasSizeChange({ width: preset.width, height: preset.height });
+  }
+
+  function swapDimensions() {
+    const newWidth = canvasSize.height;
+    const newHeight = canvasSize.width;
+    widthInput = newWidth.toString();
+    heightInput = newHeight.toString();
+    onCanvasSizeChange({ width: newWidth, height: newHeight });
   }
 
   let usedTypes = $derived(new Set(guides.map(g => g.type)));
@@ -143,7 +151,7 @@
 <aside>
   <section>
     <h2>解像度</h2>
-    <div>
+    <div class="size-inputs">
       <label>
         <span>幅</span>
         <input
@@ -154,6 +162,9 @@
           onblur={applySize}
         />
       </label>
+      <button type="button" class="swap-btn" onclick={swapDimensions} aria-label="縦横を反転">
+        <IconArrowsExchange size={18} />
+      </button>
       <label>
         <span>高さ</span>
         <input
@@ -278,24 +289,25 @@
     letter-spacing: 0.05em;
   }
 
-  section > div {
+  .size-inputs {
     display: flex;
+    align-items: flex-end;
     gap: 10px;
   }
 
-  section > div > label {
+  .size-inputs > label {
     display: flex;
     flex: 1;
     flex-direction: column;
     gap: 5px;
   }
 
-  section > div > label > span {
+  .size-inputs > label > span {
     font-size: 0.85rem;
     color: hsl(0, 0%, 50%);
   }
 
-  section > div > label > input {
+  .size-inputs > label > input {
     padding: 8px 10px;
     background-color: hsl(0, 0%, 18%);
     border: 1px solid hsl(0, 0%, 28%);
@@ -304,9 +316,28 @@
     font-size: 0.95rem;
   }
 
-  section > div > label > input:focus {
+  .size-inputs > label > input:focus {
     outline: none;
     border-color: hsl(200, 70%, 50%);
+  }
+
+  .swap-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    background-color: hsl(0, 0%, 22%);
+    border: 1px solid hsl(0, 0%, 30%);
+    border-radius: 5px;
+    color: hsl(0, 0%, 70%);
+    cursor: pointer;
+    transition: background-color 250ms, border-color 250ms, color 250ms;
+  }
+
+  .swap-btn:hover {
+    background-color: hsl(0, 0%, 28%);
+    border-color: hsl(0, 0%, 40%);
+    color: hsl(0, 0%, 90%);
   }
 
   nav {
