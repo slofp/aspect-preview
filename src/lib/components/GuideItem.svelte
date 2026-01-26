@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { Guide, HSLColor } from './types';
-  import { GUIDE_TYPE_LABELS, hslToString } from './types';
+  import type { Guide, HSLColor } from '../types';
+  import { GUIDE_TYPE_LABELS, hslToString } from '../types';
   import ColorPicker from './ColorPicker.svelte';
   import { IconChevronDown, IconChevronUp, IconTrash, IconGripVertical } from '@tabler/icons-svelte';
 

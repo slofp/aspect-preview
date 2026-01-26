@@ -1,61 +1,13 @@
 <script lang="ts">
   import type { Guide, CanvasSize, SnapSettings } from './lib/types';
-  import GuideCanvas from './lib/GuideCanvas.svelte';
-  import Sidebar from './lib/Sidebar.svelte';
-
-  const STORAGE_KEY = 'aspect-preview-settings';
-
-  interface StoredSettings {
-    canvasSize: CanvasSize;
-    guides: Guide[];
-    snap?: SnapSettings;
-  }
-
-  function loadSettings(): StoredSettings {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const canvasSizeForMigration = parsed.canvasSize || { width: 1920, height: 1080 };
-        const migratedGuides = parsed.guides.map((g: any) => {
-          const scaleX = g.scaleX ?? 1;
-          const scaleY = g.scaleY ?? 1;
-          return {
-            ...g,
-            offsetX: g.offsetX ?? 0,
-            offsetY: g.offsetY ?? 0,
-            guideWidth: g.guideWidth ?? canvasSizeForMigration.width * scaleX,
-            guideHeight: g.guideHeight ?? canvasSizeForMigration.height * scaleY,
-            rotation: g.rotation ?? 0,
-            scaleX: undefined,
-            scaleY: undefined
-          };
-        });
-        return {
-          ...parsed,
-          guides: migratedGuides,
-          snap: parsed.snap ?? { enabled: true, angle: 45 }
-        };
-      }
-    } catch {
-      // ignore
-    }
-    return {
-      canvasSize: { width: 1920, height: 1080 },
-      guides: [],
-      snap: { enabled: true, angle: 45 }
-    };
-  }
-
-  function saveSettings() {
-    const settings: StoredSettings = { canvasSize, guides, snap };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  }
+  import GuideCanvas from './lib/components/GuideCanvas.svelte';
+  import Sidebar from './lib/components/Sidebar.svelte';
+  import { loadSettings, saveSettings } from './lib/storage/settings';
 
   const initial = loadSettings();
   let canvasSize = $state<CanvasSize>(initial.canvasSize);
   let guides = $state<Guide[]>(initial.guides);
-  let snap = $state<SnapSettings>(initial.snap!);
+  let snap = $state<SnapSettings>(initial.snap);
   let canvasRef = $state<HTMLCanvasElement | null>(null);
   let selectedGuideId = $state<string | null>(null);
 
@@ -63,12 +15,8 @@
     canvasSize;
     guides;
     snap;
-    saveSettings();
+    saveSettings({ canvasSize, guides, snap });
   });
-
-  function handleSnapChange(newSnap: SnapSettings) {
-    snap = newSnap;
-  }
 
   function handleCanvasSizeChange(size: CanvasSize) {
     canvasSize = size;
@@ -80,6 +28,10 @@
 
   function handleSelectGuide(id: string | null) {
     selectedGuideId = id;
+  }
+
+  function handleSnapChange(newSnap: SnapSettings) {
+    snap = newSnap;
   }
 
   function handleExport() {

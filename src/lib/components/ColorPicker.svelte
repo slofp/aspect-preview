@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { HSLColor } from './types';
+  import type { HSLColor } from '../types';
 
   interface Props {
     color: HSLColor;

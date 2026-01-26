@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { Guide, GuideType, CanvasSize, SnapSettings } from './types';
-  import { GUIDE_TYPE_LABELS, createDefaultGuide } from './types';
+  import type { Guide, GuideType, CanvasSize, SnapSettings } from '../types';
+  import { GUIDE_TYPE_LABELS, createDefaultGuide } from '../types';
   import GuideItem from './GuideItem.svelte';
   import { IconDownload, IconArrowsExchange } from '@tabler/icons-svelte';
 
