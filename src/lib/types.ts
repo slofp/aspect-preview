@@ -38,6 +38,11 @@ export interface CanvasSize {
   height: number;
 }
 
+export interface SnapSettings {
+  enabled: boolean;
+  angle: number;
+}
+
 export const GUIDE_TYPE_LABELS: Record<GuideType, string> = {
   'thirds': '三分割法',
   'golden-ratio': '黄金比',

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Guide, CanvasSize } from './lib/types';
+  import type { Guide, CanvasSize, SnapSettings } from './lib/types';
   import GuideCanvas from './lib/GuideCanvas.svelte';
   import Sidebar from './lib/Sidebar.svelte';
 
@@ -8,6 +8,7 @@
   interface StoredSettings {
     canvasSize: CanvasSize;
     guides: Guide[];
+    snap?: SnapSettings;
   }
 
   function loadSettings(): StoredSettings {
@@ -30,33 +31,44 @@
             scaleY: undefined
           };
         });
-        return { ...parsed, guides: migratedGuides };
+        return {
+          ...parsed,
+          guides: migratedGuides,
+          snap: parsed.snap ?? { enabled: true, angle: 45 }
+        };
       }
     } catch {
       // ignore
     }
     return {
       canvasSize: { width: 1920, height: 1080 },
-      guides: []
+      guides: [],
+      snap: { enabled: true, angle: 45 }
     };
   }
 
   function saveSettings() {
-    const settings: StoredSettings = { canvasSize, guides };
+    const settings: StoredSettings = { canvasSize, guides, snap };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }
 
   const initial = loadSettings();
   let canvasSize = $state<CanvasSize>(initial.canvasSize);
   let guides = $state<Guide[]>(initial.guides);
+  let snap = $state<SnapSettings>(initial.snap!);
   let canvasRef = $state<HTMLCanvasElement | null>(null);
   let selectedGuideId = $state<string | null>(null);
 
   $effect(() => {
     canvasSize;
     guides;
+    snap;
     saveSettings();
   });
+
+  function handleSnapChange(newSnap: SnapSettings) {
+    snap = newSnap;
+  }
 
   function handleCanvasSizeChange(size: CanvasSize) {
     canvasSize = size;
@@ -85,6 +97,7 @@
     {canvasSize}
     {guides}
     {selectedGuideId}
+    {snap}
     onGuidesChange={handleGuidesChange}
     bind:canvasRef
   />
@@ -92,9 +105,11 @@
     {canvasSize}
     {guides}
     {selectedGuideId}
+    {snap}
     onCanvasSizeChange={handleCanvasSizeChange}
     onGuidesChange={handleGuidesChange}
     onSelectGuide={handleSelectGuide}
+    onSnapChange={handleSnapChange}
     onExport={handleExport}
   />
 </main>

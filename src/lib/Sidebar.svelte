@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Guide, GuideType, CanvasSize } from './types';
+  import type { Guide, GuideType, CanvasSize, SnapSettings } from './types';
   import { GUIDE_TYPE_LABELS, createDefaultGuide } from './types';
   import GuideItem from './GuideItem.svelte';
   import { IconDownload } from '@tabler/icons-svelte';
@@ -8,13 +8,15 @@
     canvasSize: CanvasSize;
     guides: Guide[];
     selectedGuideId: string | null;
+    snap: SnapSettings;
     onCanvasSizeChange: (size: CanvasSize) => void;
     onGuidesChange: (guides: Guide[]) => void;
     onSelectGuide: (id: string | null) => void;
+    onSnapChange: (snap: SnapSettings) => void;
     onExport: () => void;
   }
 
-  let { canvasSize, guides, selectedGuideId, onCanvasSizeChange, onGuidesChange, onSelectGuide, onExport }: Props = $props();
+  let { canvasSize, guides, selectedGuideId, snap, onCanvasSizeChange, onGuidesChange, onSelectGuide, onSnapChange, onExport }: Props = $props();
 
   const guideTypes: GuideType[] = ['thirds', 'golden-ratio', 'diagonal', 'center', 'golden-spiral', 'grid', 'triangle', 'rabatment', 'harmonic'];
   const presets = [
@@ -216,6 +218,31 @@
   </section>
 
   <section>
+    <h2>回転スナップ</h2>
+    <label class="snap-toggle">
+      <input
+        type="checkbox"
+        checked={snap.enabled}
+        onchange={(e) => onSnapChange({ ...snap, enabled: (e.target as HTMLInputElement).checked })}
+      />
+      <span>スナップ有効</span>
+    </label>
+    <label class="snap-angle">
+      <span>角度</span>
+      <input
+        type="number"
+        min="1"
+        max="90"
+        step="1"
+        value={snap.angle}
+        onchange={(e) => onSnapChange({ ...snap, angle: parseInt((e.target as HTMLInputElement).value) || 45 })}
+        disabled={!snap.enabled}
+      />
+      <span>°</span>
+    </label>
+  </section>
+
+  <section>
     <button type="button" onclick={onExport}>
       <IconDownload size={20} />
       PNG エクスポート
@@ -354,6 +381,60 @@
     content: '';
   }
 
+
+  label.snap-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  label.snap-toggle > input {
+    width: 18px;
+    height: 18px;
+    accent-color: hsl(200, 70%, 50%);
+    cursor: pointer;
+  }
+
+  label.snap-toggle > span {
+    font-size: 0.9rem;
+    color: hsl(0, 0%, 80%);
+  }
+
+  label.snap-angle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  label.snap-angle > span:first-child {
+    font-size: 0.9rem;
+    color: hsl(0, 0%, 70%);
+  }
+
+  label.snap-angle > input {
+    flex: 1;
+    padding: 8px 10px;
+    background-color: hsl(0, 0%, 18%);
+    border: 1px solid hsl(0, 0%, 28%);
+    border-radius: 5px;
+    color: hsl(0, 0%, 90%);
+    font-size: 0.95rem;
+  }
+
+  label.snap-angle > input:focus {
+    outline: none;
+    border-color: hsl(200, 70%, 50%);
+  }
+
+  label.snap-angle > input:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  label.snap-angle > span:last-child {
+    font-size: 0.9rem;
+    color: hsl(0, 0%, 60%);
+  }
 
   section:last-child > button {
     display: flex;

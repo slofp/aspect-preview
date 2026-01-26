@@ -1,17 +1,18 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Guide, CanvasSize } from './types';
+  import type { Guide, CanvasSize, SnapSettings } from './types';
   import { hslToString } from './types';
 
   interface Props {
     canvasSize: CanvasSize;
     guides: Guide[];
     selectedGuideId: string | null;
+    snap: SnapSettings;
     onGuidesChange: (guides: Guide[]) => void;
     canvasRef?: HTMLCanvasElement | null;
   }
 
-  let { canvasSize, guides, selectedGuideId, onGuidesChange, canvasRef = $bindable(null) }: Props = $props();
+  let { canvasSize, guides, selectedGuideId, snap, onGuidesChange, canvasRef = $bindable(null) }: Props = $props();
 
   let sectionWidth = $state(800);
   let sectionHeight = $state(600);
@@ -32,6 +33,12 @@
   type HandleType = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w' | 'rotate';
 
   const PHI = 1.618033988749895;
+
+  function snapAngle(angle: number): number {
+    if (!snap.enabled) return angle;
+    const snapRad = (snap.angle * Math.PI) / 180;
+    return Math.round(angle / snapRad) * snapRad;
+  }
 
   function getAnchorLocalPosition(handle: HandleType, w: number, h: number): { x: number; y: number } {
     switch (handle) {
@@ -579,7 +586,7 @@
         if (g.id === selectedGuideId) {
           return {
             ...g,
-            rotation: initialRotation + deltaAngle
+            rotation: snapAngle(initialRotation + deltaAngle)
           };
         }
         return g;
