@@ -14,7 +14,13 @@
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        const migratedGuides = parsed.guides.map((g: Guide) => ({
+          ...g,
+          offsetX: g.offsetX ?? 0,
+          offsetY: g.offsetY ?? 0
+        }));
+        return { ...parsed, guides: migratedGuides };
       }
     } catch {
       // ignore
@@ -34,6 +40,7 @@
   let canvasSize = $state<CanvasSize>(initial.canvasSize);
   let guides = $state<Guide[]>(initial.guides);
   let canvasRef = $state<HTMLCanvasElement | null>(null);
+  let selectedGuideId = $state<string | null>(null);
 
   $effect(() => {
     canvasSize;
@@ -49,6 +56,10 @@
     guides = newGuides;
   }
 
+  function handleSelectGuide(id: string | null) {
+    selectedGuideId = id;
+  }
+
   function handleExport() {
     if (!canvasRef) return;
 
@@ -60,12 +71,20 @@
 </script>
 
 <main>
-  <GuideCanvas {canvasSize} {guides} bind:canvasRef />
+  <GuideCanvas
+    {canvasSize}
+    {guides}
+    {selectedGuideId}
+    onGuidesChange={handleGuidesChange}
+    bind:canvasRef
+  />
   <Sidebar
     {canvasSize}
     {guides}
+    {selectedGuideId}
     onCanvasSizeChange={handleCanvasSizeChange}
     onGuidesChange={handleGuidesChange}
+    onSelectGuide={handleSelectGuide}
     onExport={handleExport}
   />
 </main>

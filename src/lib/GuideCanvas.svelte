@@ -6,13 +6,20 @@
   interface Props {
     canvasSize: CanvasSize;
     guides: Guide[];
+    selectedGuideId: string | null;
+    onGuidesChange: (guides: Guide[]) => void;
     canvasRef?: HTMLCanvasElement | null;
   }
 
-  let { canvasSize, guides, canvasRef = $bindable(null) }: Props = $props();
+  let { canvasSize, guides, selectedGuideId, onGuidesChange, canvasRef = $bindable(null) }: Props = $props();
 
   let sectionWidth = $state(800);
   let sectionHeight = $state(600);
+  let isDragging = $state(false);
+  let dragStartX = $state(0);
+  let dragStartY = $state(0);
+  let initialOffsetX = $state(0);
+  let initialOffsetY = $state(0);
 
   const PHI = 1.618033988749895;
   const SIDEBAR_WIDTH = 321;
@@ -52,6 +59,8 @@
     for (const guide of guides) {
       if (!guide.enabled) continue;
 
+      ctx.save();
+      ctx.translate(guide.offsetX, guide.offsetY);
       ctx.strokeStyle = hslToString(guide.color, guide.opacity);
       ctx.lineWidth = guide.lineWidth;
 
@@ -84,7 +93,31 @@
           drawHarmonic(ctx);
           break;
       }
+
+      if (guide.id === selectedGuideId) {
+        drawSelectionBox(ctx);
+      }
+
+      ctx.restore();
     }
+  }
+
+  function drawSelectionBox(ctx: CanvasRenderingContext2D) {
+    const w = canvasSize.width;
+    const h = canvasSize.height;
+    const scale = getCanvasScale();
+    const adjustedLineWidth = Math.max(2, 3 / scale);
+    const adjustedDash = Math.max(10, 15 / scale);
+    const adjustedGap = Math.max(5, 8 / scale);
+    const padding = Math.max(10, 15 / scale);
+
+    ctx.strokeStyle = 'hsl(200, 70%, 50%)';
+    ctx.lineWidth = adjustedLineWidth;
+    ctx.setLineDash([adjustedDash, adjustedGap]);
+    ctx.beginPath();
+    ctx.rect(-padding, -padding, w + padding * 2, h + padding * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
   function drawThirds(ctx: CanvasRenderingContext2D) {
@@ -362,10 +395,72 @@
     ctx.stroke();
   }
 
+  function getCanvasScale(): number {
+    const padding = 60;
+    const availableWidth = sectionWidth - padding;
+    const availableHeight = sectionHeight - padding;
+    const scaleX = availableWidth / canvasSize.width;
+    const scaleY = availableHeight / canvasSize.height;
+    return Math.min(scaleX, scaleY);
+  }
+
+  function handleMouseDown(e: MouseEvent) {
+    if (!selectedGuideId || !canvasRef) return;
+
+    const rect = canvasRef.getBoundingClientRect();
+    const scale = getCanvasScale();
+
+    dragStartX = (e.clientX - rect.left) / scale;
+    dragStartY = (e.clientY - rect.top) / scale;
+
+    const selectedGuide = guides.find(g => g.id === selectedGuideId);
+    if (selectedGuide) {
+      initialOffsetX = selectedGuide.offsetX;
+      initialOffsetY = selectedGuide.offsetY;
+      isDragging = true;
+    }
+  }
+
+  function handleMouseMove(e: MouseEvent) {
+    if (!isDragging || !selectedGuideId || !canvasRef) return;
+
+    const rect = canvasRef.getBoundingClientRect();
+    const scale = getCanvasScale();
+
+    const currentX = (e.clientX - rect.left) / scale;
+    const currentY = (e.clientY - rect.top) / scale;
+
+    const deltaX = currentX - dragStartX;
+    const deltaY = currentY - dragStartY;
+
+    const newGuides = guides.map(g => {
+      if (g.id === selectedGuideId) {
+        return {
+          ...g,
+          offsetX: initialOffsetX + deltaX,
+          offsetY: initialOffsetY + deltaY
+        };
+      }
+      return g;
+    });
+
+    onGuidesChange(newGuides);
+  }
+
+  function handleMouseUp() {
+    isDragging = false;
+  }
+
   onMount(() => {
     calculateSectionSize();
     window.addEventListener('resize', calculateSectionSize);
-    return () => window.removeEventListener('resize', calculateSectionSize);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      window.removeEventListener('resize', calculateSectionSize);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
   });
 
   $effect(() => {
@@ -381,6 +476,9 @@
     width={canvasSize.width}
     height={canvasSize.height}
     style="width: {displayWidth}px; height: {displayHeight}px;"
+    onmousedown={handleMouseDown}
+    class:dragging={isDragging}
+    class:selectable={selectedGuideId !== null}
   ></canvas>
 </section>
 
@@ -398,5 +496,13 @@
   canvas {
     background-color: hsl(0, 0%, 15%);
     box-shadow: 0 0 0 1px hsl(0, 0%, 25%);
+  }
+
+  canvas.selectable {
+    cursor: move;
+  }
+
+  canvas.dragging {
+    cursor: grabbing;
   }
 </style>

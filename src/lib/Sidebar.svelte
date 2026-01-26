@@ -7,12 +7,14 @@
   interface Props {
     canvasSize: CanvasSize;
     guides: Guide[];
+    selectedGuideId: string | null;
     onCanvasSizeChange: (size: CanvasSize) => void;
     onGuidesChange: (guides: Guide[]) => void;
+    onSelectGuide: (id: string | null) => void;
     onExport: () => void;
   }
 
-  let { canvasSize, guides, onCanvasSizeChange, onGuidesChange, onExport }: Props = $props();
+  let { canvasSize, guides, selectedGuideId, onCanvasSizeChange, onGuidesChange, onSelectGuide, onExport }: Props = $props();
 
   const guideTypes: GuideType[] = ['thirds', 'golden-ratio', 'diagonal', 'center', 'golden-spiral', 'grid', 'triangle', 'rabatment', 'harmonic'];
   const presets = [
@@ -200,7 +202,13 @@
             class:drop-above={dropTargetId === guide.id && dropPosition === 'above'}
             class:drop-below={dropTargetId === guide.id && dropPosition === 'below'}
           >
-            <GuideItem {guide} onupdate={updateGuide} onremove={removeGuide} />
+            <GuideItem
+              {guide}
+              selected={selectedGuideId === guide.id}
+              onupdate={updateGuide}
+              onremove={removeGuide}
+              onselect={() => onSelectGuide(selectedGuideId === guide.id ? null : guide.id)}
+            />
           </li>
         {/each}
       </ul>

@@ -26,6 +26,8 @@ export interface Guide {
   gridRows?: number;
   spiralFlip?: 'none' | 'horizontal' | 'vertical' | 'both';
   spiralShowSquares?: boolean;
+  offsetX: number;
+  offsetY: number;
 }
 
 export interface CanvasSize {
@@ -53,7 +55,9 @@ export function createDefaultGuide(type: GuideType): Guide {
     enabled: true,
     color: { h: 0, s: 0, l: 80 },
     lineWidth: 1,
-    opacity: 100
+    opacity: 100,
+    offsetX: 0,
+    offsetY: 0
   };
 
   if (type === 'grid') {

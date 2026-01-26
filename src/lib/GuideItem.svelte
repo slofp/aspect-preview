@@ -6,11 +6,13 @@
 
   interface Props {
     guide: Guide;
+    selected: boolean;
     onupdate: (guide: Guide) => void;
     onremove: (id: string) => void;
+    onselect: () => void;
   }
 
-  let { guide, onupdate, onremove }: Props = $props();
+  let { guide, selected, onupdate, onremove, onselect }: Props = $props();
 
   let expanded = $state(false);
 
@@ -53,7 +55,7 @@
   }
 </script>
 
-<article>
+<article class:selected>
   <header>
     <span class="grip" data-drag-handle>
       <IconGripVertical size={16} />
@@ -68,8 +70,10 @@
         style="background-color: {guide.enabled ? hslToString(guide.color, guide.opacity) : 'hsl(0, 0%, 30%)'};"
       ></span>
     </button>
-    <button type="button" onclick={() => expanded = !expanded}>
+    <button type="button" class="label" onclick={onselect}>
       <strong>{GUIDE_TYPE_LABELS[guide.type]}</strong>
+    </button>
+    <button type="button" onclick={() => expanded = !expanded} aria-label="展開">
       {#if expanded}
         <IconChevronUp size={18} />
       {:else}
@@ -166,6 +170,10 @@
     overflow: hidden;
   }
 
+  article.selected {
+    outline: 2px solid hsl(200, 70%, 50%);
+  }
+
   header {
     display: flex;
     align-items: center;
@@ -198,11 +206,10 @@
     border: 2px solid hsl(0, 0%, 40%);
   }
 
-  header > button:nth-of-type(2) {
+  header > button.label {
     display: flex;
     flex: 1;
     align-items: center;
-    justify-content: space-between;
     padding: 5px 10px;
     background: none;
     border: none;
@@ -210,7 +217,7 @@
     cursor: pointer;
   }
 
-  header > button:nth-of-type(2) strong {
+  header > button.label strong {
     font-size: 0.95rem;
     font-weight: 500;
   }
@@ -219,7 +226,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 5px 10px;
+    padding: 5px;
+    background: none;
+    border: none;
+    color: hsl(0, 0%, 60%);
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 250ms;
+  }
+
+  header > button:nth-of-type(3):hover {
+    opacity: 1;
+  }
+
+  header > button:nth-of-type(4) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
     background: none;
     border: none;
     color: hsl(0, 70%, 60%);
@@ -228,7 +252,7 @@
     transition: opacity 250ms;
   }
 
-  header > button:nth-of-type(3):hover {
+  header > button:nth-of-type(4):hover {
     opacity: 1;
   }
 
