@@ -74,77 +74,77 @@
   }
 
   let draggedId: string | null = $state(null);
-  let dropTargetId: string | null = $state(null);
-  let dropPosition: 'above' | 'below' | null = $state(null);
-  let canDrag = $state(false);
+  let dropTargetIndex: number | null = $state(null);
+  let listElement: HTMLUListElement | null = $state(null);
 
-  function handleMouseDown(e: MouseEvent) {
+  function handleDragStart(e: MouseEvent, guide: Guide) {
     const target = e.target as HTMLElement;
-    canDrag = !!target.closest('[data-drag-handle]');
-  }
+    if (!target.closest('[data-drag-handle]')) return;
 
-  function handleDragStart(e: DragEvent, guide: Guide) {
-    if (!canDrag) {
-      e.preventDefault();
-      return;
-    }
+    e.preventDefault();
     draggedId = guide.id;
-    if (e.dataTransfer) {
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', guide.id);
-    }
+    document.body.style.cursor = 'grabbing';
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
   }
 
-  function handleDragOver(e: DragEvent, guide: Guide) {
-    e.preventDefault();
-    if (e.dataTransfer) {
-      e.dataTransfer.dropEffect = 'move';
-    }
-    if (draggedId && draggedId !== guide.id) {
-      dropTargetId = guide.id;
-      const draggedIndex = guides.findIndex(g => g.id === draggedId);
-      const targetIndex = guides.findIndex(g => g.id === guide.id);
-      dropPosition = draggedIndex < targetIndex ? 'below' : 'above';
-    }
-  }
+  function handleMouseMove(e: MouseEvent) {
+    if (!draggedId || !listElement) return;
 
-  function handleDragLeave() {
-    dropTargetId = null;
-    dropPosition = null;
-  }
-
-  function handleDrop(e: DragEvent, targetGuide: Guide) {
-    e.preventDefault();
-    if (!draggedId || draggedId === targetGuide.id) {
-      resetDrag();
-      return;
-    }
-
+    const items = Array.from(listElement.querySelectorAll('li'));
     const draggedIndex = guides.findIndex(g => g.id === draggedId);
-    const targetIndex = guides.findIndex(g => g.id === targetGuide.id);
 
-    if (draggedIndex === -1 || targetIndex === -1) {
-      resetDrag();
-      return;
+    let newDropIndex: number | null = null;
+
+    for (let i = 0; i < items.length; i++) {
+      if (i === draggedIndex) continue;
+
+      const rect = items[i].getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+
+      if (e.clientY < midY) {
+        newDropIndex = i;
+        break;
+      } else {
+        newDropIndex = i + 1;
+      }
     }
 
-    const newGuides = [...guides];
-    const [removed] = newGuides.splice(draggedIndex, 1);
-    const insertIndex = draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
-    newGuides.splice(insertIndex, 0, removed);
-    onGuidesChange(newGuides);
+    if (newDropIndex === draggedIndex || newDropIndex === draggedIndex + 1) {
+      newDropIndex = null;
+    }
 
-    resetDrag();
+    dropTargetIndex = newDropIndex;
   }
 
-  function handleDragEnd() {
-    resetDrag();
-  }
+  function handleMouseUp() {
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = '';
 
-  function resetDrag() {
+    if (draggedId && dropTargetIndex !== null) {
+      const draggedIndex = guides.findIndex(g => g.id === draggedId);
+
+      if (draggedIndex !== -1) {
+        const newGuides = [...guides];
+        const [removed] = newGuides.splice(draggedIndex, 1);
+        const insertIndex = dropTargetIndex > draggedIndex ? dropTargetIndex - 1 : dropTargetIndex;
+        newGuides.splice(insertIndex, 0, removed);
+        onGuidesChange(newGuides);
+      }
+    }
+
     draggedId = null;
-    dropTargetId = null;
-    dropPosition = null;
+    dropTargetIndex = null;
+  }
+
+  function isDropTarget(index: number): boolean {
+    return dropTargetIndex === index && draggedId !== null;
+  }
+
+  function isDropTargetEnd(): boolean {
+    return dropTargetIndex === guides.length && draggedId !== null;
   }
 </script>
 
@@ -201,19 +201,13 @@
     {#if guides.length === 0}
       <p>構図線がありません</p>
     {:else}
-      <ul>
-        {#each guides as guide (guide.id)}
+      <ul bind:this={listElement} class:is-dragging={draggedId !== null}>
+        {#each guides as guide, index (guide.id)}
           <li
-            draggable="true"
-            onmousedown={handleMouseDown}
-            ondragstart={(e) => handleDragStart(e, guide)}
-            ondragover={(e) => handleDragOver(e, guide)}
-            ondragleave={handleDragLeave}
-            ondrop={(e) => handleDrop(e, guide)}
-            ondragend={handleDragEnd}
+            onmousedown={(e) => handleDragStart(e, guide)}
             class:dragging={draggedId === guide.id}
-            class:drop-above={dropTargetId === guide.id && dropPosition === 'above'}
-            class:drop-below={dropTargetId === guide.id && dropPosition === 'below'}
+            class:drop-above={isDropTarget(index)}
+            class:drop-below={index === guides.length - 1 && isDropTargetEnd()}
           >
             <GuideItem
               {guide}
@@ -273,7 +267,7 @@
     border-left: 1px solid hsl(0, 0%, 20%);
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: hsl(0, 0%, 30%) transparent;
+    scrollbar-color: hsl(0, 0%, 25%) transparent;
   }
 
   aside::-webkit-scrollbar {
@@ -285,12 +279,12 @@
   }
 
   aside::-webkit-scrollbar-thumb {
-    background-color: hsl(0, 0%, 30%);
+    background-color: hsl(0, 0%, 25%);
     border-radius: 4px;
   }
 
   aside::-webkit-scrollbar-thumb:hover {
-    background-color: hsl(0, 0%, 40%);
+    background-color: hsl(0, 0%, 35%);
   }
 
   section {
@@ -404,11 +398,11 @@
   li {
     position: relative;
     display: block;
-    cursor: grab;
   }
 
   li.dragging {
     opacity: 0.4;
+    cursor: grabbing;
   }
 
   li.drop-above::before {
@@ -431,6 +425,9 @@
     content: '';
   }
 
+  ul.is-dragging {
+    user-select: none;
+  }
 
   label.snap-toggle {
     display: flex;

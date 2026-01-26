@@ -23,10 +23,8 @@
     await appWindow.close();
   }
 
-  async function handleDragStart(e: MouseEvent) {
-    if (e.button === 0) {
-      await appWindow.startDragging();
-    }
+  function handleDragStart() {
+    appWindow.startDragging();
   }
 
   $effect(() => {
@@ -62,11 +60,10 @@
     background-color: hsl(0, 0%, 10%);
     border-bottom: 1px solid hsl(0, 0%, 18%);
     user-select: none;
-    -webkit-app-region: drag;
-    app-region: drag;
   }
 
   span {
+    flex: 1;
     font-size: 0.8rem;
     font-weight: 500;
     color: hsl(0, 0%, 50%);
@@ -74,8 +71,6 @@
 
   nav {
     display: flex;
-    -webkit-app-region: no-drag;
-    app-region: no-drag;
   }
 
   button {
@@ -89,8 +84,6 @@
     color: hsl(0, 0%, 60%);
     cursor: pointer;
     transition: background-color 150ms, color 150ms;
-    -webkit-app-region: no-drag;
-    app-region: no-drag;
   }
 
   button:hover {
