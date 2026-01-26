@@ -272,6 +272,25 @@
     background-color: hsl(0, 0%, 12%);
     border-left: 1px solid hsl(0, 0%, 20%);
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(0, 0%, 30%) transparent;
+  }
+
+  aside::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  aside::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  aside::-webkit-scrollbar-thumb {
+    background-color: hsl(0, 0%, 30%);
+    border-radius: 4px;
+  }
+
+  aside::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(0, 0%, 40%);
   }
 
   section {

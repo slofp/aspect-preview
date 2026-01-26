@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Guide, CanvasSize, SnapSettings } from './lib/types';
+  import TitleBar from './lib/components/TitleBar.svelte';
   import GuideCanvas from './lib/components/GuideCanvas.svelte';
   import Sidebar from './lib/components/Sidebar.svelte';
   import { loadSettings, saveSettings } from './lib/storage/settings';
@@ -44,6 +45,7 @@
   }
 </script>
 
+<TitleBar />
 <main>
   <GuideCanvas
     {canvasSize}
@@ -69,7 +71,8 @@
 <style>
   main {
     display: flex;
-    height: 100vh;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
   }
 </style>
