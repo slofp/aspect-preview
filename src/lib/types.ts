@@ -30,6 +30,7 @@ export interface Guide {
   offsetY: number;
   guideWidth: number;
   guideHeight: number;
+  rotation: number;
 }
 
 export interface CanvasSize {
@@ -61,7 +62,8 @@ export function createDefaultGuide(type: GuideType, canvasSize: CanvasSize): Gui
     offsetX: 0,
     offsetY: 0,
     guideWidth: canvasSize.width,
-    guideHeight: canvasSize.height
+    guideHeight: canvasSize.height,
+    rotation: 0
   };
 
   if (type === 'grid') {

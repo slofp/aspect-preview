@@ -25,6 +25,7 @@
             offsetY: g.offsetY ?? 0,
             guideWidth: g.guideWidth ?? canvasSizeForMigration.width * scaleX,
             guideHeight: g.guideHeight ?? canvasSizeForMigration.height * scaleY,
+            rotation: g.rotation ?? 0,
             scaleX: undefined,
             scaleY: undefined
           };
