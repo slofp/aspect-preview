@@ -160,7 +160,7 @@
     const adjustedLineWidth = Math.max(2, 3 / scale);
     const adjustedDash = Math.max(10, 15 / scale);
     const adjustedGap = Math.max(5, 8 / scale);
-    const padding = Math.max(10, 15 / scale);
+    const inset = Math.max(15, 20 / scale);
     const handleSize = Math.max(8, 12 / scale);
     const rotateHandleDistance = Math.max(30, 40 / scale);
 
@@ -168,20 +168,20 @@
     ctx.lineWidth = adjustedLineWidth;
     ctx.setLineDash([adjustedDash, adjustedGap]);
     ctx.beginPath();
-    ctx.rect(-padding, -padding, w + padding * 2, h + padding * 2);
+    ctx.rect(0, 0, w, h);
     ctx.stroke();
     ctx.setLineDash([]);
 
     ctx.fillStyle = 'hsl(200, 70%, 50%)';
     const handles: { type: HandleType; x: number; y: number }[] = [
-      { type: 'nw', x: -padding, y: -padding },
-      { type: 'n', x: w / 2, y: -padding },
-      { type: 'ne', x: w + padding, y: -padding },
-      { type: 'e', x: w + padding, y: h / 2 },
-      { type: 'se', x: w + padding, y: h + padding },
-      { type: 's', x: w / 2, y: h + padding },
-      { type: 'sw', x: -padding, y: h + padding },
-      { type: 'w', x: -padding, y: h / 2 }
+      { type: 'nw', x: inset, y: inset },
+      { type: 'n', x: w / 2, y: inset },
+      { type: 'ne', x: w - inset, y: inset },
+      { type: 'e', x: w - inset, y: h / 2 },
+      { type: 'se', x: w - inset, y: h - inset },
+      { type: 's', x: w / 2, y: h - inset },
+      { type: 'sw', x: inset, y: h - inset },
+      { type: 'w', x: inset, y: h / 2 }
     ];
 
     for (const handle of handles) {
@@ -195,9 +195,9 @@
       ctx.fill();
     }
 
-    const rotateHandleY = -padding - rotateHandleDistance;
+    const rotateHandleY = inset + rotateHandleDistance;
     ctx.beginPath();
-    ctx.moveTo(w / 2, -padding);
+    ctx.moveTo(w / 2, inset);
     ctx.lineTo(w / 2, rotateHandleY);
     ctx.stroke();
 
@@ -210,7 +210,7 @@
     const w = guide.guideWidth;
     const h = guide.guideHeight;
     const scale = getCanvasScale();
-    const padding = Math.max(10, 15 / scale);
+    const inset = Math.max(15, 20 / scale);
     const handleSize = Math.max(8, 12 / scale);
     const hitArea = handleSize * 1.5;
     const rotateHandleDistance = Math.max(30, 40 / scale);
@@ -224,7 +224,7 @@
     const localX = dx * cos - dy * sin + w / 2;
     const localY = dx * sin + dy * cos + h / 2;
 
-    const rotateHandleY = -padding - rotateHandleDistance;
+    const rotateHandleY = inset + rotateHandleDistance;
     if (
       Math.abs(localX - w / 2) < hitArea &&
       Math.abs(localY - rotateHandleY) < hitArea
@@ -233,14 +233,14 @@
     }
 
     const handles: { type: HandleType; x: number; y: number }[] = [
-      { type: 'nw', x: -padding, y: -padding },
-      { type: 'n', x: w / 2, y: -padding },
-      { type: 'ne', x: w + padding, y: -padding },
-      { type: 'e', x: w + padding, y: h / 2 },
-      { type: 'se', x: w + padding, y: h + padding },
-      { type: 's', x: w / 2, y: h + padding },
-      { type: 'sw', x: -padding, y: h + padding },
-      { type: 'w', x: -padding, y: h / 2 }
+      { type: 'nw', x: inset, y: inset },
+      { type: 'n', x: w / 2, y: inset },
+      { type: 'ne', x: w - inset, y: inset },
+      { type: 'e', x: w - inset, y: h / 2 },
+      { type: 'se', x: w - inset, y: h - inset },
+      { type: 's', x: w / 2, y: h - inset },
+      { type: 'sw', x: inset, y: h - inset },
+      { type: 'w', x: inset, y: h / 2 }
     ];
 
     for (const handle of handles) {
